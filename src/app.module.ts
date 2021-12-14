@@ -7,10 +7,14 @@ import { ClientsModule, Transport } from '@nestjs/microservices';
   imports: [
     ClientsModule.register([
       {
-        name: 'RMQ',
+        name: 'TELEGRAM_SERVICE',
         transport: Transport.RMQ,
         options: {
-          urls: ['amqp://user@password@localhost:5672'],
+          urls: ['amqp://user:password@localhost:5672'],
+          queue: 'main_queue',
+          queueOptions: {
+            durable: false,
+          },
         },
       },
     ]),
