@@ -1,16 +1,19 @@
 import { Module } from '@nestjs/common';
 import { AppService } from './app.service';
+import { AmqpModule } from 'nestjs-amqp';
 import { RabbitMQModule } from '@golevelup/nestjs-rabbitmq';
 
 @Module({
   imports: [
+    AmqpModule.forRoot({
+      name: 'rabbitmq',
+      hostname: 'localhost',
+      port: 5672,
+      username: 'user',
+      password: 'password',
+    }),
+
     RabbitMQModule.forRoot(RabbitMQModule, {
-      exchanges: [
-        {
-          name: 'exchange1',
-          type: 'topic',
-        },
-      ],
       uri: 'amqp://user:password@localhost:5672',
     }),
   ],
