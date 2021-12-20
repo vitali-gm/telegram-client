@@ -59,6 +59,10 @@ export class AppService {
         console.log(`Failed message: `, msg.peer);
       }
     }
+
+    await this.sleep(60000);
+
+    //todo sleep > 1 min
   }
 
   async eventUpdate() {
@@ -73,7 +77,7 @@ export class AppService {
         const msg = {
           chatId: update.last_message.chat_id,
           date: update.last_message.date,
-          message: update.last_message.caption.text,
+          message: update.last_message.caption.text ?? '',
           messageId: update.last_message.id,
         };
 
@@ -83,6 +87,12 @@ export class AppService {
           chat_id: update.last_message.chat_id,
         });
       }
+    });
+  }
+
+  sleep(ms: number) {
+    return new Promise((resolve) => {
+      setTimeout(resolve, ms);
     });
   }
 }
