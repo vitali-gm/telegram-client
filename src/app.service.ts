@@ -3,6 +3,7 @@ import { Client } from 'tglib';
 import { InjectAmqpConnection } from 'nestjs-amqp';
 import { Connection } from 'amqplib';
 import { RabbitSubscribe } from '@golevelup/nestjs-rabbitmq';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class AppService {
@@ -11,10 +12,11 @@ export class AppService {
   constructor(
     @InjectAmqpConnection('rabbitmq')
     private readonly amqp: Connection,
+    private readonly configService: ConfigService,
   ) {
     this.client = new Client({
-      apiId: '9075328',
-      apiHash: 'a904d865881db19aa0f242929d455e28',
+      apiId: this.configService.get<number>('TELEGRAM_API_ID'),
+      apiHash: this.configService.get<string>('TELEGRAM_API_HASH'),
       verbosityLevel: 2,
     });
   }
