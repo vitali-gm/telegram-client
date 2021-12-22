@@ -83,7 +83,7 @@ export class AppService {
         const data = update.last_message;
         console.log('[update]', update);
 
-        let message = '';
+        let message;
 
         switch (data.content['@type']) {
           case 'messageText':
@@ -98,7 +98,7 @@ export class AppService {
 
         if (message !== '') {
           const msg = {
-            chatId: data.chat_id,
+            chatId: parseInt(data.chat_id.toString().substring(4)),
             date: data.date,
             message,
             messageId: parseInt(data.id.toString().substring(5)),
