@@ -37,34 +37,40 @@ export class AppService {
     await this.client.ready;
 
     let chat = null;
+    const username = msg.peer.split('/').pop();
 
     try {
-      const username = msg.peer.split('/').pop();
-      chat = await this.client.fetch({
-        '@type': 'searchPublicChat',
-        username,
-      });
+      console.log('Start username', username);
+      chat = await this.searchChat(username);
     } catch (e) {
-      console.log('error', e);
-    }
-
-    if (chat !== null) {
-      const response = await this.client.fetch({
-        '@type': 'joinChat',
-        chat_id: chat.id,
-      });
-
-      if (response['@type'] === 'ok') {
-        await this.publish(msg.chatId.toString(), 'userbot.chat.update');
-        console.log(`Received message: `, msg.peer);
-      } else {
-        console.log(`Failed message: `, msg.peer);
+      const error = JSON.parse(e.message);
+      console.log(e);
+      if (error.code === 429) {
+        await this.sleep(100000);
+        chat = await this.searchChat(username);
       }
     }
 
-    await this.sleep(60000);
+    if (chat !== null) {
+      let response = null;
+      try {
+        response = await this.client.fetch({
+          '@type': 'joinChat',
+          chat_id: chat.id,
+        });
 
-    //todo sleep > 1 min
+        if (response && response['@type'] === 'ok') {
+          await this.publish(msg.chatId.toString(), 'userbot.chat.update');
+          console.log(`Received message: `, msg.peer);
+        } else {
+          console.log(`Failed message: `, msg.peer);
+        }
+      } catch (e) {
+        console.log(e);
+      }
+    }
+
+    await this.sleep(100000);
   }
 
   async eventUpdate() {
@@ -74,20 +80,32 @@ export class AppService {
 
     this.client.registerCallback('td:update', async (update) => {
       if (update['@type'] === 'updateChatLastMessage') {
-        console.log('[update]', update.last_message);
+        const data = update.last_message;
+        console.log('[update]', update);
 
-        const msg = {
-          chatId: update.last_message.chat_id,
-          date: update.last_message.date,
-          message: update.last_message.caption.text ?? '',
-          messageId: update.last_message.id,
-        };
+        let message = '';
 
-        await this.publish(JSON.stringify(msg), 'userbot.chat.messages');
-        await this.client.fetch({
-          '@type': 'readAllChatMentions',
-          chat_id: update.last_message.chat_id,
-        });
+        switch (data.content['@type']) {
+          case 'messageText':
+            message = data.content.text.text;
+            break;
+          case 'messagePhoto':
+            message = data.content.caption.text;
+            break;
+          default:
+            message = '';
+        }
+
+        if (message !== '') {
+          const msg = {
+            chatId: data.chat_id,
+            date: data.date,
+            message,
+            messageId: parseInt(data.id.toString().substring(5)),
+          };
+          console.log('msg', msg);
+          await this.publish(JSON.stringify(msg), 'userbot.chat.messages');
+        }
       }
     });
   }
@@ -95,6 +113,13 @@ export class AppService {
   sleep(ms: number) {
     return new Promise((resolve) => {
       setTimeout(resolve, ms);
+    });
+  }
+
+  private async searchChat(username: string) {
+    return await this.client.fetch({
+      '@type': 'searchPublicChat',
+      username,
     });
   }
 }
