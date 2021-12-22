@@ -10,7 +10,7 @@ export class AppService {
   private readonly client: Client;
 
   constructor(
-    @InjectAmqpConnection('rabbitmq')
+    @InjectAmqpConnection()
     private readonly amqp: Connection,
     private readonly configService: ConfigService,
   ) {

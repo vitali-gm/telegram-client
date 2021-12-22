@@ -2,23 +2,32 @@ import { Module } from '@nestjs/common';
 import { AppService } from './app.service';
 import { AmqpModule } from 'nestjs-amqp';
 import { RabbitMQModule } from '@golevelup/nestjs-rabbitmq';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
     }),
-    AmqpModule.forRoot({
-      name: 'rabbitmq',
-      hostname: process.env.RMQ_HOSTNAME,
-      port: parseInt(process.env.RMQ_PORT),
-      username: process.env.RMQ_USERNAME,
-      password: process.env.RMQ_PASSWORD,
+    AmqpModule.forRootAsync({
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      // @ts-ignore
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: (config: ConfigService) => ({
+        hostname: config.get('RMQ_HOSTNAME'),
+        port: parseInt(config.get('RMQ_PORT')),
+        username: config.get('RMQ_USERNAME'),
+        password: config.get('RMQ_PASSWORD'),
+      }),
     }),
 
-    RabbitMQModule.forRoot(RabbitMQModule, {
-      uri: 'amqp://guest:guest@localhost:5672',
+    RabbitMQModule.forRootAsync(RabbitMQModule, {
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: (config: ConfigService) => ({
+        uri: config.get('AMQP_URI'),
+      }),
     }),
   ],
   controllers: [],
