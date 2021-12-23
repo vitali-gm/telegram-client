@@ -27,6 +27,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
       inject: [ConfigService],
       useFactory: (config: ConfigService) => ({
         uri: config.get('AMQP_URI'),
+        prefetchCount: 1,
       }),
     }),
   ],
