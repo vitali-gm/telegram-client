@@ -83,7 +83,7 @@ export class AppService {
     this.client.registerCallback('td:update', async (update) => {
       if (update['@type'] === 'updateChatLastMessage') {
         const data = update.last_message;
-        this.logger.log('[update]', update);
+        // this.logger.log('[update]', update);
 
         let message;
 
