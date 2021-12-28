@@ -20,6 +20,7 @@ export class AppService {
       apiId: this.configService.get<number>('TELEGRAM_API_ID'),
       apiHash: this.configService.get<string>('TELEGRAM_API_HASH'),
       verbosityLevel: 2,
+      binaryPath: '/Users/vitali/Documents/projetcs/td/tdlib/lib/libtdjson',
     });
   }
 
@@ -85,28 +86,30 @@ export class AppService {
         const data = update.last_message;
         // this.logger.log('[update]', update);
 
-        let message;
+        if (data) {
+          let message;
 
-        switch (data.content['@type']) {
-          case 'messageText':
-            message = data.content.text.text;
-            break;
-          case 'messagePhoto':
-            message = data.content.caption.text;
-            break;
-          default:
-            message = '';
-        }
+          switch (data.content['@type']) {
+            case 'messageText':
+              message = data.content.text.text;
+              break;
+            case 'messagePhoto':
+              message = data.content.caption.text;
+              break;
+            default:
+              message = '';
+          }
 
-        if (message !== '') {
-          const msg = {
-            chatId: parseInt(data.chat_id.toString().substring(4)),
-            date: data.date,
-            message,
-            messageId: parseInt(data.id.toString().substring(5)),
-          };
-          this.logger.log('msg', msg);
-          await this.publish(JSON.stringify(msg), 'userbot.chat.messages');
+          if (message !== '') {
+            const msg = {
+              chatId: parseInt(data.chat_id.toString().substring(4)),
+              date: data.date,
+              message,
+              messageId: parseInt(data.id.toString().substring(5)),
+            };
+            this.logger.log('msg', msg);
+            await this.publish(JSON.stringify(msg), 'userbot.chat.messages');
+          }
         }
       }
     });
