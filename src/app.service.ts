@@ -20,7 +20,6 @@ export class AppService {
       apiId: this.configService.get<number>('TELEGRAM_API_ID'),
       apiHash: this.configService.get<string>('TELEGRAM_API_HASH'),
       verbosityLevel: 2,
-      binaryPath: '/Users/vitali/Documents/projetcs/td/tdlib/lib/libtdjson',
     });
   }
 
