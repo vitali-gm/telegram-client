@@ -2,8 +2,15 @@ import { Injectable, Logger } from '@nestjs/common';
 import { Client } from 'tglib';
 import { InjectAmqpConnection } from 'nestjs-amqp';
 import { Connection } from 'amqplib';
-// import { RabbitSubscribe } from '@golevelup/nestjs-rabbitmq';
+import { RabbitSubscribe } from '@golevelup/nestjs-rabbitmq';
 import { ConfigService } from '@nestjs/config';
+import {InjectRepository} from "@nestjs/typeorm";
+import {Repository} from "typeorm";
+import {DataSource} from "./entities/data-source.entity";
+import {UserbotAccount} from "./entities/userbot-account.entity";
+import {UserbotChat} from "./entities/userbot-chat.entity";
+
+const USERBOT_ACCOUNT_ID = 4;
 
 @Injectable()
 export class AppService {
@@ -15,6 +22,12 @@ export class AppService {
     @InjectAmqpConnection()
     private readonly amqp: Connection,
     private readonly configService: ConfigService,
+    @InjectRepository(DataSource)
+    private dataSourceRepository: Repository<DataSource>,
+    @InjectRepository(UserbotAccount)
+    private userbotAccountRepository: Repository<UserbotAccount>,
+    @InjectRepository(UserbotChat)
+    private userbotChatRepository: Repository<UserbotChat>
   ) {
     this.client = new Client({
       apiId: this.configService.get<number>('TELEGRAM_API_ID'),
@@ -125,5 +138,85 @@ export class AppService {
       '@type': 'searchPublicChat',
       username,
     });
+  }
+
+
+  @RabbitSubscribe({
+    routingKey: 'telegram_join_chat',
+    queue: 'telegram_join_chat',
+  })
+  public async joinChat(msg: { peer: string; data_source_id: number }) {
+    const dataSource = await this.dataSourceRepository.findOne(msg.data_source_id);
+
+    await this.client.ready;
+
+    let chat = null;
+    let errMessage = '';
+
+    const username = msg.peer.split('/').pop();
+
+    try {
+      this.logger.log('Start username', username);
+      chat = await this.searchChat(username);
+    } catch (e) {
+      const error = JSON.parse(e.message);
+      this.logger.error(e);
+      if (error.code === 429) {
+        await this.sleep(100000);
+        chat = await this.searchChat(username);
+      }
+    }
+
+    if (chat == null) {
+      this.logger.warn(`Не удалось подписаться на telegram-чат (peer=${msg.peer})`);
+    } else {
+      const chatId = parseInt(chat.id.toString().substring(4));
+
+      const userbotChat = await this.userbotChatRepository.findOne({ where: { chatId }});
+
+      console.log('userbotChat', userbotChat);
+
+      if (!userbotChat) {
+        const userbotAccount = await this.userbotAccountRepository.findOne(USERBOT_ACCOUNT_ID);
+
+        const newUserbotChat = new UserbotChat();
+        newUserbotChat.chatId = chatId;
+        newUserbotChat.title = chat.title;
+        newUserbotChat.accountId = USERBOT_ACCOUNT_ID;
+
+        await this.userbotChatRepository.save(newUserbotChat);
+
+        userbotAccount.channels += 1;
+
+        await this.userbotAccountRepository.update(USERBOT_ACCOUNT_ID, userbotAccount);
+      }
+
+      const checkDataSource = await this.dataSourceRepository.findOne({
+        where: {
+          typeUid: chatId
+        }
+      });
+
+      if (!checkDataSource) {
+        if (!dataSource) {
+          errMessage = 'Источник данных не существует';
+        } else {
+          dataSource.typeUid = chatId;
+          dataSource.status = 'valid';
+        }
+      } else {
+        errMessage = 'Этот telegram-чат уже добавлен как источник данных.';
+      }
+    }
+
+    if (errMessage !== '') {
+      if (dataSource) {
+        dataSource.status = 'invalid';
+        dataSource.active = 0;
+        dataSource.errMsg = errMessage ?? 'Непредвиденная ошибка'
+      }
+    }
+
+    await this.dataSourceRepository.update(dataSource.id, dataSource);
   }
 }
