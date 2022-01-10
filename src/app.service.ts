@@ -172,6 +172,22 @@ export class AppService {
     } else {
       const chatId = parseInt(chat.id.toString().substring(4));
 
+      let response = null;
+      try {
+        response = await this.client.fetch({
+          '@type': 'joinChat',
+          chat_id: chat.id,
+        });
+
+        if (response && response['@type'] === 'ok') {
+          this.logger.log(`Received message: ${msg.peer}`);
+        } else {
+          this.logger.warn(`Failed message: ${msg.peer}`);
+        }
+      } catch (e) {
+        this.logger.error(e);
+      }
+
       const userbotChat = await this.userbotChatRepository.findOne({ where: { chatId }});
 
       console.log('userbotChat', userbotChat);
