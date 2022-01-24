@@ -7,6 +7,7 @@ import { TypeOrmModule } from "@nestjs/typeorm";
 import { DataSource } from "./entities/data-source.entity";
 import {UserbotChat} from "./entities/userbot-chat.entity";
 import {UserbotAccount} from "./entities/userbot-account.entity";
+import {UserbotMessage} from "./entities/userbot-message.entity";
 
 @Module({
   imports: [
@@ -26,7 +27,7 @@ import {UserbotAccount} from "./entities/userbot-account.entity";
         synchronize: false,
       })
     }),
-    TypeOrmModule.forFeature([DataSource, UserbotChat, UserbotAccount]),
+    TypeOrmModule.forFeature([DataSource, UserbotChat, UserbotAccount, UserbotMessage]),
     ConfigModule.forRoot({
       isGlobal: true,
     }),

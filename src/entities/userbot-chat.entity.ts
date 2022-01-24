@@ -1,4 +1,5 @@
-import { Column, CreateDateColumn, Entity, PrimaryColumn, UpdateDateColumn } from "typeorm";
+import { Column, CreateDateColumn, Entity, OneToMany, PrimaryColumn, UpdateDateColumn } from "typeorm";
+import { UserbotMessage } from "./userbot-message.entity";
 
 @Entity('userbot_chat')
 export class UserbotChat {
@@ -16,6 +17,13 @@ export class UserbotChat {
 
   @Column()
   username: string
+
+  @OneToMany(
+    () => UserbotMessage,
+    (userbotMessage: UserbotMessage) => userbotMessage.userbotChat,
+    { cascade: true, onDelete: 'CASCADE' }
+  )
+  userbotMessages: UserbotMessage[]
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date

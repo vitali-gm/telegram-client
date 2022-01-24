@@ -6,5 +6,6 @@ async function bootstrap() {
   const app = await NestFactory.createApplicationContext(AppModule);
   const appService = app.get(AppService);
   await appService.eventUpdate();
+  await appService.updateMessageId();
 }
 bootstrap();

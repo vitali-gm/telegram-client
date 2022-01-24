@@ -4,19 +4,21 @@ import { InjectAmqpConnection } from 'nestjs-amqp';
 import { Connection } from 'amqplib';
 import { RabbitSubscribe } from '@golevelup/nestjs-rabbitmq';
 import { ConfigService } from '@nestjs/config';
-import {InjectRepository} from "@nestjs/typeorm";
-import {Repository} from "typeorm";
-import {DataSource} from "./entities/data-source.entity";
-import {UserbotAccount} from "./entities/userbot-account.entity";
-import {UserbotChat} from "./entities/userbot-chat.entity";
+import { InjectRepository } from "@nestjs/typeorm";
+import { LessThan, MoreThan, Repository } from "typeorm";
+import { DataSource } from "./entities/data-source.entity";
+import { UserbotAccount } from "./entities/userbot-account.entity";
+import { UserbotChat } from "./entities/userbot-chat.entity";
+import { UserbotMessage } from "./entities/userbot-message.entity";
 
-const USERBOT_ACCOUNT_ID = 5;
 
 @Injectable()
 export class AppService {
   private readonly client: Client;
 
   private readonly logger = new Logger(AppService.name);
+
+  private readonly userbotAccountId: number;
 
   constructor(
     @InjectAmqpConnection()
@@ -27,13 +29,18 @@ export class AppService {
     @InjectRepository(UserbotAccount)
     private userbotAccountRepository: Repository<UserbotAccount>,
     @InjectRepository(UserbotChat)
-    private userbotChatRepository: Repository<UserbotChat>
+    private userbotChatRepository: Repository<UserbotChat>,
+    @InjectRepository(UserbotMessage)
+    private userbotMessageRepository: Repository<UserbotMessage>
   ) {
     this.client = new Client({
       apiId: this.configService.get<number>('TELEGRAM_API_ID'),
       apiHash: this.configService.get<string>('TELEGRAM_API_HASH'),
       verbosityLevel: 2,
+      binaryPath: '/Users/vitali/Documents/projetcs/td/tdlib/lib/libtdjson',
     });
+
+    this.userbotAccountId = this.configService.get<number>('USERBOT_ACCOUNT_ID');
   }
 
   private async publish(message: string, queue: string) {
@@ -88,6 +95,55 @@ export class AppService {
     await this.sleep(100000);
   }
 
+  async updateMessageId() {
+    await this.client.ready;
+    this.logger.log(this.client);
+
+    const limit = 500;
+    let offset = 0;
+    let messages = [];
+
+    do {
+      messages = await this.userbotMessageRepository.find({
+        relations: ['userbotChat'],
+        skip: offset,
+        take: limit,
+        where: {
+          userbotChat: {
+            accountId: this.userbotAccountId
+          },
+          createdAt: MoreThan('2021-05-18 00:00:00'),
+          updatedAt: LessThan('2022-01-24 00:00:00')
+        }
+      });
+
+      for (const item of messages) {
+        this.logger.log(`Start message ${item.messageId}`);
+
+        const searchMessage = await this.client.fetch({
+          '@type': 'searchChatMessages',
+          chat_id: parseInt(-100 + String(item.messageId)), //-1001489609347,
+          // chat_id: -1001489609347,
+          query: item.origin.message,
+          limit: 5
+        });
+
+        if (searchMessage.messages) {
+          for (const message of searchMessage.messages) {
+            if (parseInt(message.id.toString().substring(5)) === item.messageId) {
+              const messageId = await this.getMessageId(message.chat_id, message.id);
+
+              await this.userbotMessageRepository.update(item.id, {messageId})
+              this.logger.log(`Save message ${item.messageId}`);
+              break;
+            }
+          }
+        }
+      }
+      offset += limit;
+    } while (messages.length > 0);
+  }
+
   async eventUpdate() {
     await this.client.ready;
 
@@ -113,11 +169,12 @@ export class AppService {
           }
 
           if (message !== '') {
+            const messageId = await this.getMessageId(data.chat_id, data.id)
             const msg = {
               chatId: parseInt(data.chat_id.toString().substring(4)),
               date: data.date,
               message,
-              messageId: parseInt(data.id.toString().substring(5)),
+              messageId,
             };
             this.logger.log('msg', msg);
             await this.publish(JSON.stringify(msg), 'userbot.chat.messages');
@@ -138,6 +195,22 @@ export class AppService {
       '@type': 'searchPublicChat',
       username,
     });
+  }
+
+  private async getMessageId(chatId: number, messageId: number) {
+    try {
+      const response = await this.client.fetch({
+        '@type': 'getMessageLink',
+        chat_id: chatId,
+        message_id: messageId
+      });
+
+      if (response.link) {
+        return response.link.split('/').pop();
+      }
+    } catch (e) {
+      this.logger.error(e);
+    }
   }
 
 
@@ -193,18 +266,18 @@ export class AppService {
       console.log('userbotChat', userbotChat);
 
       if (!userbotChat) {
-        const userbotAccount = await this.userbotAccountRepository.findOne(USERBOT_ACCOUNT_ID);
+        const userbotAccount = await this.userbotAccountRepository.findOne(this.userbotAccountId);
 
         const newUserbotChat = new UserbotChat();
         newUserbotChat.chatId = chatId;
         newUserbotChat.title = chat.title;
-        newUserbotChat.accountId = USERBOT_ACCOUNT_ID;
+        newUserbotChat.accountId = this.userbotAccountId;
 
         await this.userbotChatRepository.save(newUserbotChat);
 
         userbotAccount.channels += 1;
 
-        await this.userbotAccountRepository.update(USERBOT_ACCOUNT_ID, userbotAccount);
+        await this.userbotAccountRepository.update(this.userbotAccountId, userbotAccount);
       }
 
       const checkDataSource = await this.dataSourceRepository.findOne({
