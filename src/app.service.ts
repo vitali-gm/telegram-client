@@ -136,7 +136,7 @@ export class AppService {
           if (searchMessage.messages) {
             for (const message of searchMessage.messages) {
               console.log('message id with parseInt', parseInt(message.id.toString().substring(4)))
-              if (parseInt(message.id.toString().substring(4)) === item.messageId) {
+              if (parseInt(message.id.toString().substring(5)) === item.messageId) {
                 const messageId = await this.getMessageId(message.chat_id, message.id);
 
                 await this.userbotMessageRepository.update(item.id, {messageId})
