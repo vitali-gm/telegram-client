@@ -124,25 +124,29 @@ export class AppService {
       for (const item of messages) {
         this.logger.log(`Start message ${item.messageId}, ${item.chatId}`);
 
-        const searchMessage = await this.client.fetch({
-          '@type': 'searchChatMessages',
-          chat_id: parseInt(-100 + String(item.chatId)), //-1001489609347,
-          // chat_id: -1001043205127,
-          query: item.origin.message,
-          limit: 5
-        });
+        try {
+          const searchMessage = await this.client.fetch({
+            '@type': 'searchChatMessages',
+            chat_id: parseInt(-100 + String(item.chatId)), //-1001489609347,
+            // chat_id: -1001043205127,
+            query: item.origin.message,
+            limit: 5
+          });
 
-        if (searchMessage.messages) {
-          for (const message of searchMessage.messages) {
-            console.log('message id with parseInt', parseInt(message.id.toString().substring(4)))
-            if (parseInt(message.id.toString().substring(4)) === item.messageId) {
-              const messageId = await this.getMessageId(message.chat_id, message.id);
+          if (searchMessage.messages) {
+            for (const message of searchMessage.messages) {
+              console.log('message id with parseInt', parseInt(message.id.toString().substring(4)))
+              if (parseInt(message.id.toString().substring(4)) === item.messageId) {
+                const messageId = await this.getMessageId(message.chat_id, message.id);
 
-              await this.userbotMessageRepository.update(item.id, {messageId})
-              this.logger.log(`Save message ${item.messageId}`);
-              break;
+                await this.userbotMessageRepository.update(item.id, {messageId})
+                this.logger.log(`Save message ${item.messageId}`);
+                break;
+              }
             }
           }
+        } catch (e) {
+          console.log(e);
         }
       }
       offset += limit;
