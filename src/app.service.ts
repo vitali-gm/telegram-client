@@ -96,7 +96,7 @@ export class AppService {
   }
 
   async updateMessageId() {
-    console.log('start func', this.client);
+    console.log('start func');
     await this.client.ready;
     console.log('client ready and start');
     this.logger.log(this.client);
@@ -126,8 +126,8 @@ export class AppService {
 
         const searchMessage = await this.client.fetch({
           '@type': 'searchChatMessages',
-          chat_id: parseInt(-100 + String(item.messageId)), //-1001489609347,
-          // chat_id: -1001489609347,
+          chat_id: parseInt(-100 + String(item.chatId)), //-1001489609347,
+          // chat_id: -1001043205127,
           query: item.origin.message,
           limit: 5
         });
