@@ -113,7 +113,7 @@ export class AppService {
             accountId: this.userbotAccountId
           },
           createdAt: MoreThan('2021-05-18 00:00:00'),
-          updatedAt: LessThan('2022-01-24 00:00:00')
+          updatedAt: LessThan('2022-01-27 00:00:00')
         }
       });
 
