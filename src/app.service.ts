@@ -141,7 +141,8 @@ export class AppService {
 
                 console.log('Valid message id', messageId);
 
-                await this.userbotMessageRepository.update(item.id, {messageId})
+                const rSave = await this.userbotMessageRepository.update(item.id, {messageId});
+                console.log('Save userbot message', rSave);
                 this.logger.log(`Save message ${item.messageId}`);
                 break;
               }
