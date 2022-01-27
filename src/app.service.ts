@@ -117,6 +117,8 @@ export class AppService {
         }
       });
 
+      this.logger.log(`Count messages ${messages.length}`);
+
       for (const item of messages) {
         this.logger.log(`Start message ${item.messageId}`);
 
