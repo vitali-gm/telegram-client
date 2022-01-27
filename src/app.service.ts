@@ -37,7 +37,7 @@ export class AppService {
       apiId: this.configService.get<number>('TELEGRAM_API_ID'),
       apiHash: this.configService.get<string>('TELEGRAM_API_HASH'),
       verbosityLevel: 2,
-      // binaryPath: '/Users/vitali/Documents/projetcs/td/tdlib/lib/libtdjson',
+      binaryPath: '/Users/vitali/Documents/projetcs/td/tdlib/lib/libtdjson',
     });
 
     this.userbotAccountId = this.configService.get<number>('USERBOT_ACCOUNT_ID');
@@ -114,8 +114,8 @@ export class AppService {
           userbotChat: {
             accountId: this.userbotAccountId
           },
-          createdAt: MoreThan('2021-05-18 00:00:00'),
-          updatedAt: LessThan('2022-01-27 00:00:00')
+          createdAt: MoreThan('2021-12-23 00:00:00'),
+          updatedAt: LessThan('2022-01-28 00:00:00')
         }
       });
 
