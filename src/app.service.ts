@@ -96,7 +96,9 @@ export class AppService {
   }
 
   async updateMessageId() {
+    console.log('start func');
     await this.client.ready;
+    console.log('client ready and start');
     this.logger.log(this.client);
 
     const limit = 500;
@@ -216,10 +218,10 @@ export class AppService {
   }
 
 
-  @RabbitSubscribe({
-    routingKey: 'telegram_join_chat',
-    queue: 'telegram_join_chat',
-  })
+  // @RabbitSubscribe({
+  //   routingKey: 'telegram_join_chat',
+  //   queue: 'telegram_join_chat',
+  // })
   public async joinChat(msg: { peer: string; data_source_id: number }) {
     const dataSource = await this.dataSourceRepository.findOne(msg.data_source_id);
 
