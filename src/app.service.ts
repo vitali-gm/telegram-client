@@ -134,6 +134,7 @@ export class AppService {
 
         if (searchMessage.messages) {
           for (const message of searchMessage.messages) {
+            console.log('message id with parseInt', parseInt(message.id.toString().substring(4)))
             if (parseInt(message.id.toString().substring(4)) === item.messageId) {
               const messageId = await this.getMessageId(message.chat_id, message.id);
 
