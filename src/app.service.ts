@@ -139,6 +139,8 @@ export class AppService {
               if (parseInt(message.id.toString().substring(5)) === item.messageId) {
                 const messageId = await this.getMessageId(message.chat_id, message.id);
 
+                console.log('Valid message id', messageId);
+
                 await this.userbotMessageRepository.update(item.id, {messageId})
                 this.logger.log(`Save message ${item.messageId}`);
                 break;
