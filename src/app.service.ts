@@ -122,7 +122,7 @@ export class AppService {
       this.logger.log(`Count messages ${messages.length}`);
 
       for (const item of messages) {
-        this.logger.log(`Start message ${item.messageId}`);
+        this.logger.log(`Start message ${item.messageId}, ${item.chatId}`);
 
         const searchMessage = await this.client.fetch({
           '@type': 'searchChatMessages',
@@ -134,7 +134,7 @@ export class AppService {
 
         if (searchMessage.messages) {
           for (const message of searchMessage.messages) {
-            if (parseInt(message.id.toString().substring(5)) === item.messageId) {
+            if (parseInt(message.id.toString().substring(4)) === item.messageId) {
               const messageId = await this.getMessageId(message.chat_id, message.id);
 
               await this.userbotMessageRepository.update(item.id, {messageId})
