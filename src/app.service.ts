@@ -96,7 +96,7 @@ export class AppService {
   }
 
   async updateMessageId() {
-    console.log('start func');
+    console.log('start func', this.client);
     await this.client.ready;
     console.log('client ready and start');
     this.logger.log(this.client);
