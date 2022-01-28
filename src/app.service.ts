@@ -221,9 +221,9 @@ export class AppService {
         const messageId = response.link.split('/').pop();
         const res = messageId.split('?');
         if (res.length > 1) {
-          return res[0];
+          return parseInt(res[0]);
         }
-        return messageId;
+        return parseInt(messageId);
       }
     } catch (e) {
       this.logger.error(e);
