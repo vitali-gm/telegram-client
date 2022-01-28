@@ -218,7 +218,12 @@ export class AppService {
       });
 
       if (response.link) {
-        return response.link.split('/').pop();
+        const messageId = response.link.split('/').pop();
+        const res = messageId.split('?');
+        if (res.length > 1) {
+          return res[0];
+        }
+        return messageId;
       }
     } catch (e) {
       this.logger.error(e);
