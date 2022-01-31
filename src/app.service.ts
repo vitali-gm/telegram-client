@@ -129,7 +129,7 @@ export class AppService {
             '@type': 'searchChatMessages',
             chat_id: parseInt(-100 + String(item.chatId)), //-1001489609347,
             // chat_id: -1001043205127,
-            query: item.origin.message,
+            query: item.origin.message.substring(0, 100),
             limit: 20
           });
 
