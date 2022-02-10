@@ -174,6 +174,7 @@ export class AppService {
               message = data.content.text.text;
               break;
             case 'messagePhoto':
+            case 'messageVideo':
               message = data.content.caption.text;
               break;
             default:
